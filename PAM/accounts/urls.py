@@ -11,6 +11,7 @@ urlpatterns = [
     
     # Manager routes
     path('manager/dashboard/', views.manager_dashboard_view, name='manager_dashboard'),
+    path('manager/phone-history/', views.phone_history_view, name='phone_history'),
     path('manager/sellers/pending/', views.pending_sellers_view, name='pending_sellers'),
     path('manager/sellers/', views.manage_sellers_view, name='manage_sellers'),
     path('manager/sellers/<int:user_id>/approve/', views.approve_seller_view, name='approve_seller'),

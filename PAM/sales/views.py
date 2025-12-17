@@ -206,17 +206,6 @@ def sales_dashboard_view(request):
             chart_revenue.append(float(year_data['revenue'] or 0))
             chart_profit.append(float(year_data['profit'] or 0))
     
-    # All transactions for the table below dashboard
-    all_transactions = transactions.select_related('seller', 'phone', 'agreement').order_by('-sale_date')
-    
-    # Pagination for all transactions
-    paginator = Paginator(all_transactions, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Get all sellers for filter (managers only)
-    sellers = CustomUser.objects.filter(role='seller', is_suspended=False) if (request.user.is_manager() or request.user.is_superuser) else []
-    
     context = {
         'stats': stats,
         'recent_transactions': recent_transactions,
@@ -228,10 +217,6 @@ def sales_dashboard_view(request):
         'period': period,
         'start_date': start_date,
         'end_date': end_date,
-        'all_transactions': page_obj,
-        'is_paginated': page_obj.has_other_pages(),
-        'page_obj': page_obj,
-        'sellers': sellers,
     }
     
     return render(request, 'sales/dashboard.html', context)

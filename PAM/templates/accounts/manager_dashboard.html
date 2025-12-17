@@ -215,38 +215,82 @@
             </div>
         </div>
         
-        <!-- Recent Transactions -->
+        <!-- Phones History -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Recent Transactions</h5>
-                <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-primary">View All</a>
+                <h5 class="mb-0"><i class="fas fa-history"></i> Phones History (All Activities)</h5>
+                <a href="{% url 'phone_history' %}" class="btn btn-sm btn-primary">View All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover table-sm mb-0">
                         <thead>
                             <tr>
-                                <th>Trans. ID</th>
-                                <th>Seller</th>
+                                <th>Reference #</th>
+                                <th>Activity Type</th>
                                 <th>Phone</th>
+                                <th>Seller</th>
+                                <th>Customer/Recipient</th>
                                 <th>Amount</th>
-                                <th>Profit</th>
                                 <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for transaction in recent_transactions %}
+                            {% for activity in phone_activities %}
                             <tr>
-                                <td><small>{{ transaction.transaction_id }}</small></td>
-                                <td>{{ transaction.seller.username }}</td>
-                                <td>{{ transaction.phone.brand }} {{ transaction.phone.model }}</td>
-                                <td>RWF {{ transaction.sale_price }}</td>
-                                <td class="text-success">RWF {{ transaction.profit }}</td>
-                                <td>{{ transaction.sale_date|date:"M d" }}</td>
+                                <td>
+                                    <small class="font-monospace">
+                                        {% if activity.agreement_number %}
+                                            {{ activity.agreement_number }}
+                                        {% else %}
+                                            ASSIGN-{{ activity.id|stringformat:"06d" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if activity.agreement_type == 'buy' %}
+                                        <span class="badge bg-primary">Buy</span>
+                                    {% elif activity.agreement_type == 'sell' %}
+                                        <span class="badge bg-success">Sell</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Assign</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ activity.phone.brand }} {{ activity.phone.model }}</strong><br>
+                                    <small class="text-muted">{{ activity.phone.imei }}</small>
+                                </td>
+                                <td>
+                                    {% if activity.seller %}
+                                        {{ activity.seller.username }}
+                                    {% else %}
+                                        {{ activity.from_seller.username }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.customer_name %}
+                                        {{ activity.customer_name }}
+                                    {% else %}
+                                        {{ activity.to_seller.username }}<br>
+                                        <small>
+                                            <span class="badge bg-{% if activity.status == 'approved' %}success{% elif activity.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                                {{ activity.get_status_display }}
+                                            </span>
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.price %}
+                                        <strong>RWF {{ activity.price|floatformat:0 }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ activity.created_at|date:"M d" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted">No transactions yet</td>
+                                <td colspan="7" class="text-center text-muted">No phone activities yet</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -277,8 +321,8 @@
                     <a href="{% url 'agreement_list' %}" class="btn btn-success">
                         <i class="fas fa-file-contract"></i> View Agreements
                     </a>
-                    <a href="{% url 'sales_dashboard' %}" class="btn btn-primary">
-                        <i class="fas fa-chart-line"></i> Sales Analytics
+                    <a href="{% url 'phone_history' %}" class="btn btn-primary">
+                        <i class="fas fa-history"></i> Phones History
                     </a>
                     <a href="{% url 'report' %}" class="btn btn-success">
                         <i class="fas fa-file-alt"></i> Generate Report

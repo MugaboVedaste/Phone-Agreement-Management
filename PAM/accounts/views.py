@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Sum, Q
+from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 from .models import CustomUser
 from agreements.models import Phone, Agreement
@@ -124,7 +125,7 @@ def logout_view(request):
     """User logout view"""
     logout(request)
     messages.info(request, 'You have been logged out successfully.')
-    return redirect('login')
+    return redirect('home')
 
 
 @login_required
@@ -139,12 +140,15 @@ def hold_view(request):
     return render(request, 'accounts/hold.html')
 
 
-@login_required
 def home_view(request):
     """
-    Home/dashboard view - redirects users based on role.
-    Sellers go to inventory, managers to their dashboard.
+    Landing page view - shows welcome page for non-authenticated users.
+    Authenticated users are redirected based on their role.
     """
+    # If user is not authenticated, show landing page
+    if not request.user.is_authenticated:
+        return render(request, 'landing.html')
+    
     # Redirect based on user role
     if request.user.is_superuser:
         return redirect('admin:index')
@@ -216,9 +220,21 @@ def manager_dashboard_view(request):
         'seller', 'phone'
     ).order_by('-created_at')[:10]
     
-    context['recent_transactions'] = SalesTransaction.objects.select_related(
-        'seller', 'phone'
-    ).filter(status='completed').order_by('-sale_date')[:10]
+    # Phone activities (buy, sell, assign)
+    from agreements.models import PhoneAssignment
+    from itertools import chain
+    
+    agreements = Agreement.objects.all().select_related('seller', 'phone').order_by('-created_at')[:5]
+    assignments = PhoneAssignment.objects.all().select_related('from_seller', 'to_seller', 'phone').order_by('-created_at')[:5]
+    
+    # Combine and sort by date
+    phone_activities = sorted(
+        chain(agreements, assignments),
+        key=lambda x: x.created_at,
+        reverse=True
+    )[:10]
+    
+    context['phone_activities'] = phone_activities
     
     # Top performing sellers
     context['top_sellers'] = SalesTransaction.objects.filter(
@@ -360,3 +376,77 @@ def profile_view(request):
     return render(request, 'accounts/profile.html', {
         'user': request.user
     })
+
+
+@login_required
+def phone_history_view(request):
+    """
+    Manager-only view for complete phones history.
+    Shows all buy, sell, and assign activities with filtering.
+    """
+    # Check permission
+    if not (request.user.is_manager() or request.user.is_superuser):
+        messages.error(request, 'Access denied. Manager privileges required.')
+        return redirect('home')
+    
+    # Get filter parameters
+    activity_type = request.GET.get('activity_type', '')
+    seller_id = request.GET.get('seller', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    
+    # Get agreements and assignments
+    from agreements.models import PhoneAssignment
+    from itertools import chain
+    
+    agreements = Agreement.objects.all().select_related('seller', 'phone')
+    assignments = PhoneAssignment.objects.all().select_related('from_seller', 'to_seller', 'phone')
+    
+    # Apply activity type filter
+    if activity_type == 'buy':
+        agreements = agreements.filter(agreement_type='buy')
+        assignments = PhoneAssignment.objects.none()
+    elif activity_type == 'sell':
+        agreements = agreements.filter(agreement_type='sell')
+        assignments = PhoneAssignment.objects.none()
+    elif activity_type == 'assign':
+        agreements = Agreement.objects.none()
+    
+    # Apply seller filter
+    if seller_id:
+        agreements = agreements.filter(seller_id=seller_id)
+        assignments = assignments.filter(Q(from_seller_id=seller_id) | Q(to_seller_id=seller_id))
+    
+    # Apply date range filter
+    if start_date and end_date:
+        try:
+            start = datetime.strptime(start_date, '%Y-%m-%d')
+            end = datetime.strptime(end_date, '%Y-%m-%d')
+            agreements = agreements.filter(created_at__date__range=[start, end])
+            assignments = assignments.filter(created_at__date__range=[start, end])
+        except ValueError:
+            pass
+    
+    # Combine and sort by date
+    all_activities = sorted(
+        chain(agreements, assignments),
+        key=lambda x: x.created_at,
+        reverse=True
+    )
+    
+    # Pagination
+    paginator = Paginator(all_activities, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get all sellers for filter dropdown
+    sellers = CustomUser.objects.filter(role='seller', is_suspended=False).order_by('first_name', 'last_name')
+    
+    context = {
+        'all_activities': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'sellers': sellers,
+    }
+    
+    return render(request, 'accounts/phone_history.html', context)

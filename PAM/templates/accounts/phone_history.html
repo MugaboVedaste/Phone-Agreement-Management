@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}Phones History - PAM System{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-history"></i> Phones History (All Activities)</h2>
+    <p class="text-muted">Complete history of all phone activities - buy, sell, and assign</p>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Activity Type</label>
+                <select name="activity_type" class="form-select form-select-sm">
+                    <option value="">All Activities</option>
+                    <option value="buy" {% if request.GET.activity_type == 'buy' %}selected{% endif %}>Buy</option>
+                    <option value="sell" {% if request.GET.activity_type == 'sell' %}selected{% endif %}>Sell</option>
+                    <option value="assign" {% if request.GET.activity_type == 'assign' %}selected{% endif %}>Assign</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Seller</label>
+                <select name="seller" class="form-select form-select-sm">
+                    <option value="">All Sellers</option>
+                    {% for seller in sellers %}
+                    <option value="{{ seller.id }}" {% if request.GET.seller == seller.id|stringformat:"s" %}selected{% endif %}>
+                        {{ seller.get_full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Phones History Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Activity History</h5>
+        <button class="btn btn-sm btn-success" onclick="generateReport()">
+            <i class="fas fa-file-excel"></i> Generate Report
+        </button>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Reference #</th>
+                    <th>Date</th>
+                    <th>Activity Type</th>
+                    <th>Phone</th>
+                    <th>Seller</th>
+                    <th>Customer/Recipient</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in all_activities %}
+                <tr>
+                    <td>
+                        <small class="font-monospace">
+                            {% if activity.agreement_number %}
+                                {{ activity.agreement_number }}
+                            {% else %}
+                                ASSIGN-{{ activity.id|stringformat:"06d" }}
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td><small>{{ activity.created_at|date:"M d, Y H:i" }}</small></td>
+                    <td>
+                        {% if activity.agreement_type == 'buy' %}
+                            <span class="badge bg-primary">Buy</span>
+                        {% elif activity.agreement_type == 'sell' %}
+                            <span class="badge bg-success">Sell</span>
+                        {% else %}
+                            <span class="badge bg-warning">Assign</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ activity.phone.brand }} {{ activity.phone.model }}</strong><br>
+                        <small class="text-muted">{{ activity.phone.imei }}</small>
+                    </td>
+                    <td>
+                        {% if activity.seller %}
+                            {{ activity.seller.get_full_name }}
+                        {% else %}
+                            {{ activity.from_seller.get_full_name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if activity.customer_name %}
+                            {{ activity.customer_name }}<br>
+                            <small class="text-muted">{{ activity.customer_phone }}</small>
+                        {% else %}
+                            {{ activity.to_seller.get_full_name }}<br>
+                            <small class="text-muted">
+                                <span class="badge bg-{% if activity.status == 'approved' %}success{% elif activity.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                    {{ activity.get_status_display }}
+                                </span>
+                            </small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if activity.price %}
+                            <strong>RWF {{ activity.price|floatformat:0 }}</strong>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if activity.agreement_number %}
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'agreement_detail' activity.pk %}" 
+                               class="btn btn-outline-primary btn-sm"
+                               title="View Agreement">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'agreement_pdf' activity.pk %}" 
+                               class="btn btn-outline-success btn-sm"
+                               title="Download PDF"
+                               download>
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        </div>
+                        {% else %}
+                        <span class="text-muted">Assignment</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No phone activities found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="card-footer">
+        <nav aria-label="Activity pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.seller %}&seller={{ request.GET.seller }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.seller %}&seller={{ request.GET.seller }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.seller %}&seller={{ request.GET.seller }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.seller %}&seller={{ request.GET.seller }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Generate Report Function
+    function generateReport() {
+        const params = new URLSearchParams(window.location.search);
+        const activityType = params.get('activity_type') || 'all';
+        const seller = params.get('seller') || '';
+        const startDate = params.get('start_date') || '';
+        const endDate = params.get('end_date') || '';
+        
+        let reportData = 'Phones History Report\n';
+        reportData += '=============\n\n';
+        reportData += `Generated: ${new Date().toLocaleString()}\n`;
+        reportData += `Activity Type: ${activityType}\n`;
+        if (startDate && endDate) {
+            reportData += `Date Range: ${startDate} to ${endDate}\n\n`;
+        } else {
+            reportData += `Date Range: All Time\n\n`;
+        }
+        
+        reportData += 'Activity Details:\n';
+        reportData += 'Reference #,Date,Activity Type,Phone Brand,Phone Model,IMEI,Seller,Customer/Recipient,Amount,Status\n';
+        
+        {% for activity in all_activities %}
+        reportData += '{% if activity.agreement_number %}{{ activity.agreement_number }}{% else %}ASSIGN-{{ activity.id|stringformat:"06d" }}{% endif %},';
+        reportData += '{{ activity.created_at|date:"Y-m-d H:i" }},';
+        reportData += '{% if activity.agreement_type == "buy" %}Buy{% elif activity.agreement_type == "sell" %}Sell{% else %}Assign{% endif %},';
+        reportData += '"{{ activity.phone.brand }}",';
+        reportData += '"{{ activity.phone.model }}",';
+        reportData += '{{ activity.phone.imei }},';
+        reportData += '"{% if activity.seller %}{{ activity.seller.get_full_name }}{% else %}{{ activity.from_seller.get_full_name }}{% endif %}",';
+        reportData += '"{% if activity.customer_name %}{{ activity.customer_name }}{% else %}{{ activity.to_seller.get_full_name }}{% endif %}",';
+        reportData += '{% if activity.price %}{{ activity.price }}{% else %}N/A{% endif %},';
+        reportData += '{% if activity.status %}{{ activity.get_status_display }}{% else %}Completed{% endif %}\n';
+        {% endfor %}
+        
+        // Download as CSV
+        const blob = new Blob([reportData], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `phones_history_report_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        // Show success message
+        alert('Report generated successfully! Check your downloads folder.');
+    }
+</script>
+{% endblock %}
