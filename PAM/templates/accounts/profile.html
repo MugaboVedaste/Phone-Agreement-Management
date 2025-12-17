@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - PAM System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-circle"></i> My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if user.role == 'seller' %}
+                        <div class="row mb-4">
+                            <div class="col-md-12 text-center">
+                                {% if user.signature %}
+                                <div class="mb-3">
+                                    <img src="{{ user.signature.url }}" alt="Signature" 
+                                         style="max-width: 300px; border: 2px solid #e2e8f0; padding: 10px; background: white;">
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> No signature uploaded yet. Please upload your signature below.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Personal Information</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" 
+                                       value="{{ user.username }}" disabled>
+                                <small class="text-muted">Username cannot be changed</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Role</label>
+                                <input type="text" class="form-control" id="role" 
+                                       value="{{ user.get_role_display|default:'Superuser' }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ user.last_name }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone_number" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" 
+                                       value="{{ user.phone_number }}" placeholder="07XXXXXXXX" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="national_id" class="form-label">National ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="national_id" name="national_id" 
+                                   value="{{ user.national_id }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="address" name="address" 
+                                      rows="3" required>{{ user.address }}</textarea>
+                        </div>
+
+                        {% if user.role == 'seller' %}
+                        <hr class="my-4">
+
+                        <h5 class="text-primary mb-3"><i class="fas fa-signature"></i> Signature</h5>
+                        
+                        <div class="mb-3">
+                            <label for="signature" class="form-label">Upload Signature Image</label>
+                            <input type="file" class="form-control" id="signature" name="signature" accept="image/*">
+                            <small class="text-muted">
+                                This signature will be used in all your agreements. Accepted formats: JPG, PNG. Max size: 2MB.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Important:</strong> Make sure to complete your profile including signature. 
+                            Your signature is required for creating agreements.
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if user.is_seller %}
+            <div class="card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Profile Completion Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 25px;">
+                        {% if user.first_name and user.last_name and user.email and user.phone_number and user.address and user.national_id and user.signature %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
+                            <strong>100% Complete</strong>
+                        </div>
+                        {% else %}
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 70%;">
+                            <strong>Incomplete - Please fill all fields</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-check-circle text-success"></i> Personal Information: Required for identification</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Contact Details: For communication</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Signature: Required for all agreements</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

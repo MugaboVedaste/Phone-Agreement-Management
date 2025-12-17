@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Buy Phone - PAM System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-shopping-cart"></i> Buy Phone & Create Agreement</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This form will create both the phone record and buying agreement together.
+                    </div>
+
+                    <form method="post" id="buyPhoneForm">
+                        {% csrf_token %}
+                        
+                        <!-- Phone Information -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-mobile-alt"></i> Phone Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="imei_number" class="form-label">IMEI Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="imei_number" name="imei_number" required 
+                                       pattern="[0-9]{15}" maxlength="15" placeholder="15-digit IMEI number">
+                                <small class="text-muted">Exactly 15 digits</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="serial_number" class="form-label">Serial Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="serial_number" name="serial_number" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="brand" class="form-label">Brand <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="brand" name="brand" required placeholder="e.g., Samsung, iPhone">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="model" name="model" required placeholder="e.g., Galaxy S23, iPhone 15">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="color" class="form-label">Color <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="color" name="color" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="storage_capacity" class="form-label">Storage</label>
+                                <input type="text" class="form-control" id="storage_capacity" name="storage_capacity" placeholder="e.g., 128GB">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="condition" class="form-label">Condition <span class="text-danger">*</span></label>
+                                <select class="form-select" id="condition" name="condition" required>
+                                    <option value="used">Used</option>
+                                    <option value="new">New</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="purchase_price" class="form-label">Purchase Price (RWF) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="purchase_price" name="purchase_price" required min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <!-- Supplier/Seller Information (Person you're buying from) -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-user"></i> Supplier Information (Person you're buying from)</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier_name" class="form-label">Supplier Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="supplier_name" name="supplier_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier_id" class="form-label">Supplier ID Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="supplier_id" name="supplier_id" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier_phone" class="form-label">Supplier Phone <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="supplier_phone" name="supplier_phone" required placeholder="07XXXXXXXX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier_address" class="form-label">Supplier Address <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="supplier_address" name="supplier_address" required>
+                            </div>
+                        </div>
+
+                        <!-- Payment Information -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-money-bill-wave"></i> Payment Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                                <select class="form-select" id="payment_method" name="payment_method" required>
+                                    <option value="">Select payment method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="installment">Installment</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="notes" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about the purchase..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Supplier ID Photo -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-id-card"></i> Supplier ID Photo</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <video id="webcam_id" width="100%" height="300" autoplay style="border: 2px solid #e2e8f0; background: #000;"></video>
+                                <button type="button" class="btn btn-primary mt-2 w-100" onclick="captureIDPhoto()">
+                                    <i class="fas fa-camera"></i> Capture ID Photo
+                                </button>
+                                <input type="hidden" name="supplier_id_photo" id="supplier_id_photo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <canvas id="id_preview" width="400" height="300" style="border: 2px solid #e2e8f0; width: 100%;"></canvas>
+                                <p class="text-muted mt-2"><small>Supplier's ID photo will appear here</small></p>
+                            </div>
+                        </div>
+
+                        <!-- Supplier Signature Photo -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-signature"></i> Supplier Signature Photo</h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Ask the supplier to sign on paper, then take a photo of the signature.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <video id="webcam_signature" width="100%" height="300" autoplay style="border: 2px solid #e2e8f0; background: #000;"></video>
+                                <button type="button" class="btn btn-primary mt-2 w-100" onclick="captureSignaturePhoto()">
+                                    <i class="fas fa-camera"></i> Capture Signature Photo
+                                </button>
+                                <input type="hidden" name="supplier_signature_photo" id="supplier_signature_photo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <canvas id="signature_preview" width="400" height="300" style="border: 2px solid #e2e8f0; width: 100%;"></canvas>
+                                <p class="text-muted mt-2"><small>Signature photo will appear here</small></p>
+                            </div>
+                        </div>
+
+                        <!-- Your Signature (automatically from profile) -->
+                        <h5 class="text-primary mt-4 mb-3"><i class="fas fa-user-check"></i> Your Signature (Buyer)</h5>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Your signature will be automatically added from your profile.
+                            {% if user.signature %}
+                            <div class="mt-2">
+                                <img src="{{ user.signature.url }}" alt="Your Signature" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Complete Purchase
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize webcams
+let videoID = document.getElementById('webcam_id');
+let videoSignature = document.getElementById('webcam_signature');
+let canvasID = document.getElementById('id_preview');
+let canvasSignature = document.getElementById('signature_preview');
+let ctxID = canvasID.getContext('2d');
+let ctxSignature = canvasSignature.getContext('2d');
+
+let stream = null;
+
+// Start webcam for ID photo
+async function startWebcamID() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoID.srcObject = stream;
+        videoSignature.srcObject = stream;
+    } catch (err) {
+        console.error("Error accessing webcam:", err);
+        alert("Could not access webcam. Please check permissions.");
+    }
+}
+
+// Capture ID photo
+function captureIDPhoto() {
+    ctxID.drawImage(videoID, 0, 0, canvasID.width, canvasID.height);
+    document.getElementById('supplier_id_photo').value = canvasID.toDataURL('image/jpeg');
+}
+
+// Capture signature photo
+function captureSignaturePhoto() {
+    ctxSignature.drawImage(videoSignature, 0, 0, canvasSignature.width, canvasSignature.height);
+    document.getElementById('supplier_signature_photo').value = canvasSignature.toDataURL('image/jpeg');
+}
+
+// Start webcam on page load
+startWebcamID();
+</script>
+{% endblock %}

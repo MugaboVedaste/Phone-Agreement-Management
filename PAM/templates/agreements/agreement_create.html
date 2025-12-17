@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Agreement - PAM System{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-file-signature"></i> Create New Agreement</h2>
+</div>
+
+<form method="post" id="agreementForm">
+    {% csrf_token %}
+    
+    <div class="row">
+        <!-- Agreement Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Agreement Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Agreement Type *</label>
+                            <select name="agreement_type" class="form-select" required>
+                                <option value="buy">Buy Agreement</option>
+                                <option value="sell">Sell Agreement</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Phone *</label>
+                            <select name="phone" class="form-select" required>
+                                <option value="">Select Phone</option>
+                                {% for phone in available_phones %}
+                                <option value="{{ phone.pk }}" {% if phone.pk == selected_phone %}selected{% endif %}>
+                                    {{ phone.brand }} {{ phone.model }} - {{ phone.imei_number }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Buyer Information</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" name="buyer_name" class="form-control" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="text" name="buyer_phone" class="form-control" 
+                                   placeholder="+250XXXXXXXXX" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="buyer_email" class="form-control">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Address *</label>
+                        <textarea name="buyer_address" class="form-control" rows="2" required></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">ID Type *</label>
+                            <select name="buyer_id_type" class="form-select" required>
+                                <option value="">Select ID Type</option>
+                                <option value="national_id">National ID</option>
+                                <option value="passport">Passport</option>
+                                <option value="driving_license">Driving License</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">ID Number *</label>
+                            <input type="text" name="buyer_id_number" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Agreement Terms</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Agreed Price *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="agreed_price" class="form-control" 
+                                       step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Method *</label>
+                            <select name="payment_method" class="form-select" required>
+                                <option value="cash">Cash</option>
+                                <option value="mobile_money">Mobile Money</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="installment">Installment</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Agreement Duration (days)</label>
+                        <input type="number" name="agreement_duration_days" class="form-control" 
+                               placeholder="Optional">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Special Terms & Conditions</label>
+                        <textarea name="terms_and_conditions" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Signatures & Documents -->
+        <div class="col-md-4">
+            <!-- Seller Signature -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Seller Signature *</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="sellerSignature" class="border rounded w-100" 
+                            style="height: 150px; cursor: crosshair;"></canvas>
+                    <input type="hidden" name="seller_signature_base64" id="sellerSignatureData">
+                    <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                            onclick="clearSignature('seller')">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Buyer Signature -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Buyer Signature *</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="buyerSignature" class="border rounded w-100" 
+                            style="height: 150px; cursor: crosshair;"></canvas>
+                    <input type="hidden" name="buyer_signature_base64" id="buyerSignatureData">
+                    <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                            onclick="clearSignature('buyer')">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Document Photos -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">ID Document Photo</h6>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-primary w-100 mb-2" 
+                            onclick="capturePhoto('id_document')">
+                        <i class="fas fa-camera"></i> Capture ID
+                    </button>
+                    <canvas id="idDocumentCanvas" class="border rounded w-100 d-none" 
+                            style="height: 150px;"></canvas>
+                    <input type="hidden" name="id_document_photo" id="idDocumentData">
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Passport Photo</h6>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-primary w-100 mb-2" 
+                            onclick="capturePhoto('passport')">
+                        <i class="fas fa-camera"></i> Capture Photo
+                    </button>
+                    <canvas id="passportCanvas" class="border rounded w-100 d-none" 
+                            style="height: 150px;"></canvas>
+                    <input type="hidden" name="passport_photo" id="passportData">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Buttons -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'agreement_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-check"></i> Create Agreement
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Capture Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="cameraStream" autoplay class="w-100 mb-3"></video>
+                <button type="button" class="btn btn-primary" onclick="takePhoto()">
+                    <i class="fas fa-camera"></i> Take Photo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Signature functionality
+    const signatureCanvases = {
+        seller: document.getElementById('sellerSignature'),
+        buyer: document.getElementById('buyerSignature')
+    };
+    
+    Object.keys(signatureCanvases).forEach(type => {
+        const canvas = signatureCanvases[type];
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+            const dataId = type === 'seller' ? 'sellerSignatureData' : 'buyerSignatureData';
+            document.getElementById(dataId).value = canvas.toDataURL();
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            drawing = false;
+        });
+    });
+    
+    function clearSignature(type) {
+        const canvas = signatureCanvases[type];
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const dataId = type === 'seller' ? 'sellerSignatureData' : 'buyerSignatureData';
+        document.getElementById(dataId).value = '';
+    }
+    
+    // Camera functionality
+    let currentCameraType = null;
+    let stream = null;
+    
+    async function capturePhoto(type) {
+        currentCameraType = type;
+        const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        modal.show();
+        
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.getElementById('cameraStream').srcObject = stream;
+        } catch (err) {
+            alert('Camera access denied or not available');
+            modal.hide();
+        }
+    }
+    
+    function takePhoto() {
+        const video = document.getElementById('cameraStream');
+        const canvasId = currentCameraType === 'id_document' ? 'idDocumentCanvas' : 'passportCanvas';
+        const dataId = currentCameraType === 'id_document' ? 'idDocumentData' : 'passportData';
+        
+        const canvas = document.getElementById(canvasId);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        
+        document.getElementById(dataId).value = canvas.toDataURL();
+        canvas.classList.remove('d-none');
+        
+        // Stop camera
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('cameraModal')).hide();
+    }
+    
+    // Form validation
+    document.getElementById('agreementForm').addEventListener('submit', (e) => {
+        const sellerSig = document.getElementById('sellerSignatureData').value;
+        const buyerSig = document.getElementById('buyerSignatureData').value;
+        
+        if (!sellerSig || !buyerSig) {
+            e.preventDefault();
+            alert('Both seller and buyer signatures are required!');
+        }
+    });
+</script>
+{% endblock %}

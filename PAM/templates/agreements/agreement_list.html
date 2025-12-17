@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Agreements - PAM System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-contract"></i> Agreements</h2>
+    <div>
+        <a href="{% url 'buy_phone' %}" class="btn btn-primary me-2">
+            <i class="fas fa-shopping-cart"></i> Buy Phone
+        </a>
+        <a href="{% url 'phone_list' %}" class="btn btn-success">
+            <i class="fas fa-mobile-alt"></i> Sell Phone
+        </a>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="buy">Buy Agreement</option>
+                    <option value="sell">Sell Agreement</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search by agreement #, buyer name...">
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="date" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Agreements Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Agreement #</th>
+                        <th>Type</th>
+                        <th>Phone</th>
+                        <th>Counterparty</th>
+                        <th>Contact</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agreement in agreements %}
+                    <tr>
+                        <td><strong>{{ agreement.agreement_number }}</strong></td>
+                        <td>
+                            <span class="badge bg-{{ agreement.agreement_type|yesno:'primary,success' }}">
+                                {{ agreement.get_agreement_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ agreement.phone.brand }} {{ agreement.phone.model }}
+                            <br>
+                            <small class="text-muted">{{ agreement.phone.imei_number }}</small>
+                        </td>
+                        <td>
+                            {% if agreement.agreement_type == 'buy' %}
+                                <strong>Seller:</strong> {{ agreement.customer_name }}
+                            {% else %}
+                                <strong>Buyer:</strong> {{ agreement.customer_name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ agreement.customer_phone }}</small>
+                        </td>
+                        <td><strong>RWF {{ agreement.agreed_price }}</strong></td>
+                        <td>{{ agreement.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'agreement_detail' agreement.pk %}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'agreement_pdf' agreement.pk %}" 
+                                   class="btn btn-outline-danger" title="Download PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No agreements found. <a href="{% url 'agreement_create' %}">Create your first agreement</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

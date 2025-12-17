@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Report - PAM System{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-file-alt"></i> Sales Report</h2>
+</div>
+
+<!-- Report Filter -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Report Criteria</h5>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Report Type</label>
+                    <select name="report_type" class="form-select">
+                        <option value="summary">Summary Report</option>
+                        <option value="detailed">Detailed Report</option>
+                        <option value="seller_performance">Seller Performance</option>
+                        <option value="product_analysis">Product Analysis</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sync"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Content -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Report Results</h5>
+        <div>
+            <button onclick="window.print()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="{% url 'report_export' %}?format=pdf" class="btn btn-sm btn-danger">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </a>
+            <a href="{% url 'report_export' %}?format=excel" class="btn btn-sm btn-success">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Summary Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="border-bottom pb-2">Summary</h4>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="border p-3 text-center">
+                    <h3 class="text-primary">{{ report.total_transactions }}</h3>
+                    <p class="mb-0 text-muted">Total Transactions</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="border p-3 text-center">
+                    <h3 class="text-success">RWF {{ report.total_revenue|floatformat:2 }}</h3>
+                    <p class="mb-0 text-muted">Total Revenue</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="border p-3 text-center">
+                    <h3 class="text-warning">RWF {{ report.total_profit|floatformat:2 }}</h3>
+                    <p class="mb-0 text-muted">Total Profit</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="border p-3 text-center">
+                    <h3 class="text-info">{{ report.profit_margin|floatformat:1 }}%</h3>
+                    <p class="mb-0 text-muted">Profit Margin</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Transactions -->
+        <div class="row">
+            <div class="col-12">
+                <h4 class="border-bottom pb-2">Transaction Details</h4>
+            </div>
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date</th>
+                                <th>Transaction ID</th>
+                                <th>Seller</th>
+                                <th>Phone</th>
+                                <th>Sale Price</th>
+                                <th>Cost</th>
+                                <th>Profit</th>
+                                <th>Commission</th>
+                                <th>Payment Method</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.sale_date|date:"Y-m-d" }}</td>
+                                <td><small>{{ transaction.transaction_id }}</small></td>
+                                <td>{{ transaction.seller.get_full_name }}</td>
+                                <td>{{ transaction.phone.brand }} {{ transaction.phone.model }}</td>
+                                <td>RWF {{ transaction.sale_price }}</td>
+                                <td>RWF {{ transaction.cost_price }}</td>
+                                <td class="text-success">RWF {{ transaction.profit }}</td>
+                                <td>RWF {{ transaction.commission_amount }}</td>
+                                <td>{{ transaction.get_payment_method_display }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">
+                                    No transactions found for the selected criteria
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% if transactions %}
+                        <tfoot class="table-secondary">
+                            <tr>
+                                <th colspan="4" class="text-end">Total:</th>
+                                <th>RWF {{ report.total_revenue|floatformat:2 }}</th>
+                                <th>RWF {{ report.total_cost|floatformat:2 }}</th>
+                                <th class="text-success">RWF {{ report.total_profit|floatformat:2 }}</th>
+                                <th>RWF {{ report.total_commission|floatformat:2 }}</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seller Performance Breakdown -->
+        {% if report_type == 'seller_performance' %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="border-bottom pb-2">Seller Performance</h4>
+            </div>
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Seller</th>
+                                <th>Sales Count</th>
+                                <th>Revenue</th>
+                                <th>Profit</th>
+                                <th>Avg. Profit Margin</th>
+                                <th>Commission Earned</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for performance in seller_performances %}
+                            <tr>
+                                <td>{{ performance.seller.get_full_name }}</td>
+                                <td>{{ performance.total_sales }}</td>
+                                <td>RWF {{ performance.total_revenue|floatformat:2 }}</td>
+                                <td>RWF {{ performance.total_profit|floatformat:2 }}</td>
+                                <td>{{ performance.profit_margin|floatformat:1 }}%</td>
+                                <td>RWF {{ performance.total_commission|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer text-muted">
+        <small>Report generated on {{ current_date|date:"F d, Y \a\t H:i" }}</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .btn, .card-header > div, nav, footer {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}

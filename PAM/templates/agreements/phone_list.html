@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Phone Inventory - PAM System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-mobile-alt"></i> Phone Inventory</h2>
+    <a href="{% url 'buy_phone' %}" class="btn btn-primary">
+        <i class="fas fa-shopping-cart"></i> Buy Phone
+    </a>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="available">Available</option>
+                    <option value="sold">Sold</option>
+                    <option value="assigned">Assigned</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Search IMEI, Serial, Brand, Model...">
+            </div>
+            <div class="col-md-3">
+                <select name="owner" class="form-select">
+                    <option value="">All Owners</option>
+                    {% for seller in sellers %}
+                    <option value="{{ seller.id }}">{{ seller.get_full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Phone List -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Brand/Model</th>
+                    <th>IMEI</th>
+                    <th>Serial</th>
+                    <th>Color</th>
+                    <th>Condition</th>
+                    <th>Status</th>
+                    <th>Purchase Price</th>
+                    <th>Owner</th>
+                    <th>Agreements</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for phone in phones %}
+                <tr>
+                    <td>
+                        <strong>{{ phone.brand }} {{ phone.model }}</strong>
+                    </td>
+                    <td><code>{{ phone.imei }}</code></td>
+                    <td>{{ phone.serial_number|default:"N/A" }}</td>
+                    <td>{{ phone.color|default:"N/A" }}</td>
+                    <td>
+                        <span class="badge bg-secondary">{{ phone.get_condition_display }}</span>
+                    </td>
+                    <td>
+                        {% if phone.status == 'available' %}
+                            <span class="badge bg-success">Available</span>
+                        {% elif phone.status == 'sold' %}
+                            <span class="badge bg-danger">Sold</span>
+                        {% else %}
+                            <span class="badge bg-warning">{{ phone.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if phone.purchase_price %}
+                            <strong>RWF {{ phone.purchase_price }}</strong>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if phone.current_owner %}
+                            {{ phone.current_owner.get_full_name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if phone.agreements.exists %}
+                            <div class="d-flex flex-column gap-1">
+                                {% for agreement in phone.agreements.all %}
+                                <div class="d-flex align-items-center gap-1">
+                                    {% if agreement.agreement_type == 'buy' %}
+                                        <span class="badge bg-primary">Buy</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Sell</span>
+                                    {% endif %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'agreement_detail' agreement.pk %}" 
+                                           class="btn btn-outline-primary btn-sm" 
+                                           title="View Agreement #{{ agreement.id }}">
+                                            <i class="fas fa-eye"></i> #{{ agreement.id }}
+                                        </a>
+                                        <a href="{% url 'agreement_pdf' agreement.pk %}" 
+                                           class="btn btn-outline-success btn-sm" 
+                                           title="Download PDF"
+                                           download>
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">No agreements</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" 
+                                    class="btn btn-outline-primary"
+                                    title="View Details"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#phoneModal"
+                                    data-phone-id="{{ phone.pk }}"
+                                    data-phone-brand="{{ phone.brand }}"
+                                    data-phone-model="{{ phone.model }}"
+                                    data-phone-imei="{{ phone.imei }}"
+                                    data-phone-serial="{{ phone.serial_number|default:'N/A' }}"
+                                    data-phone-color="{{ phone.color|default:'N/A' }}"
+                                    data-phone-storage="{{ phone.storage_capacity|default:'N/A' }}"
+                                    data-phone-condition="{{ phone.get_condition_display }}"
+                                    data-phone-status="{{ phone.get_status_display }}"
+                                    data-phone-price="{% if phone.purchase_price %}RWF {{ phone.purchase_price }}{% else %}N/A{% endif %}"
+                                    data-phone-owner="{% if phone.current_owner %}{{ phone.current_owner.get_full_name }}{% else %}N/A{% endif %}"
+                                    data-phone-created="{{ phone.created_at|date:'F d, Y H:i' }}"
+                                    data-phone-updated="{{ phone.updated_at|date:'F d, Y H:i' }}"
+                                    data-phone-notes="{{ phone.notes|default:'No notes' }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if user.role == 'seller' %}
+                                {% if phone.status == 'available' %}
+                                <a href="{% url 'sell_phone' phone.pk %}" 
+                                   class="btn btn-success"
+                                   title="Sell Phone">
+                                    <i class="fas fa-hand-holding-usd"></i> Sell
+                                </a>
+                                <a href="{% url 'assign_phone' phone.pk %}" 
+                                   class="btn btn-warning"
+                                   title="Assign to Another Seller">
+                                    <i class="fas fa-exchange-alt"></i> Assign
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-info-circle"></i> No phones found. 
+                            <a href="{% url 'buy_phone' %}">Buy your first phone</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1">First</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Phone Detail Modal -->
+<div class="modal fade" id="phoneModal" tabindex="-1" aria-labelledby="phoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="phoneModalLabel">
+                    <i class="fas fa-mobile-alt"></i> Phone Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Brand:</strong></div>
+                    <div class="col-md-8" id="modalBrand"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Model:</strong></div>
+                    <div class="col-md-8" id="modalModel"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>IMEI Number:</strong></div>
+                    <div class="col-md-8"><code id="modalImei"></code></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Serial Number:</strong></div>
+                    <div class="col-md-8"><code id="modalSerial"></code></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Color:</strong></div>
+                    <div class="col-md-8" id="modalColor"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Storage Capacity:</strong></div>
+                    <div class="col-md-8" id="modalStorage"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Condition:</strong></div>
+                    <div class="col-md-8" id="modalCondition"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Status:</strong></div>
+                    <div class="col-md-8" id="modalStatus"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Purchase Price:</strong></div>
+                    <div class="col-md-8" id="modalPrice"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Current Owner:</strong></div>
+                    <div class="col-md-8" id="modalOwner"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Created:</strong></div>
+                    <div class="col-md-8" id="modalCreated"></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4"><strong>Last Updated:</strong></div>
+                    <div class="col-md-8" id="modalUpdated"></div>
+                </div>
+                
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Notes:</strong>
+                        <p class="mt-2" id="modalNotes"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Populate modal with phone details when clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneModal = document.getElementById('phoneModal');
+        
+        phoneModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            
+            // Extract data from button attributes
+            document.getElementById('modalBrand').textContent = button.getAttribute('data-phone-brand');
+            document.getElementById('modalModel').textContent = button.getAttribute('data-phone-model');
+            document.getElementById('modalImei').textContent = button.getAttribute('data-phone-imei');
+            document.getElementById('modalSerial').textContent = button.getAttribute('data-phone-serial');
+            document.getElementById('modalColor').textContent = button.getAttribute('data-phone-color');
+            document.getElementById('modalStorage').textContent = button.getAttribute('data-phone-storage');
+            document.getElementById('modalCondition').textContent = button.getAttribute('data-phone-condition');
+            document.getElementById('modalStatus').textContent = button.getAttribute('data-phone-status');
+            document.getElementById('modalPrice').textContent = button.getAttribute('data-phone-price');
+            document.getElementById('modalOwner').textContent = button.getAttribute('data-phone-owner');
+            document.getElementById('modalCreated').textContent = button.getAttribute('data-phone-created');
+            document.getElementById('modalUpdated').textContent = button.getAttribute('data-phone-updated');
+            document.getElementById('modalNotes').textContent = button.getAttribute('data-phone-notes');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard - PAM System{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-tachometer-alt"></i> Manager Dashboard</h2>
+    <p class="text-muted">System-wide overview and management tools</p>
+</div>
+
+<!-- User Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-uppercase">Total Sellers</h6>
+                        <h2 class="mt-2 mb-0">{{ stats.total_sellers }}</h2>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-50"></i>
+                </div>
+                <div class="mt-2">
+                    <small><i class="fas fa-check-circle"></i> {{ stats.active_sellers }} Active</small><br>
+                    <small><i class="fas fa-ban"></i> {{ stats.suspended_sellers }} Suspended</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-uppercase">Pending Approval</h6>
+                        <h2 class="mt-2 mb-0">{{ stats.pending_approval }}</h2>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+                <div class="mt-2">
+                    <a href="{% url 'pending_sellers' %}" class="text-white">
+                        <small><i class="fas fa-arrow-right"></i> Review Now</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-uppercase">Monthly Revenue</h6>
+                        <h2 class="mt-2 mb-0">RWF {{ stats.monthly_revenue|floatformat:0 }}</h2>
+                    </div>
+                    <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                </div>
+                <div class="mt-2">
+                    <small><i class="fas fa-chart-line"></i> Profit: RWF {{ stats.monthly_profit|floatformat:0 }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-uppercase">Total Transactions</h6>
+                        <h2 class="mt-2 mb-0">{{ stats.total_transactions }}</h2>
+                    </div>
+                    <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                </div>
+                <div class="mt-2">
+                    <small><i class="fas fa-file-contract"></i> {{ stats.total_agreements }} Agreements</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                <h4>{{ stats.total_phones }}</h4>
+                <small class="text-muted">Total Phones</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4>{{ stats.available_phones }}</h4>
+                <small class="text-muted">Available</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-dollar-sign fa-2x text-primary mb-2"></i>
+                <h4>{{ stats.sold_phones }}</h4>
+                <small class="text-muted">Sold</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exchange-alt fa-2x text-success mb-2"></i>
+                <h4>{{ stats.assigned_phones }}</h4>
+                <small class="text-muted">Assigned</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-md-8">
+        <!-- Pending Seller Approvals -->
+        {% if pending_sellers %}
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-user-clock"></i> Pending Seller Approvals</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Registered</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seller in pending_sellers %}
+                            <tr>
+                                <td><strong>{{ seller.username }}</strong></td>
+                                <td>{{ seller.get_full_name }}</td>
+                                <td>{{ seller.phone_number }}</td>
+                                <td>{{ seller.date_joined|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'approve_seller' seller.id %}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-check"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'pending_sellers' %}" class="btn btn-sm btn-primary">
+                    View All Pending <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Agreements -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-contract"></i> Recent Agreements</h5>
+                <a href="{% url 'agreement_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Agreement #</th>
+                                <th>Type</th>
+                                <th>Seller</th>
+                                <th>Buyer</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agreement in recent_agreements %}
+                            <tr>
+                                <td><small>{{ agreement.agreement_number }}</small></td>
+                                <td>
+                                    <span class="badge bg-{{ agreement.agreement_type|yesno:'primary,success' }}">
+                                        {{ agreement.get_agreement_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ agreement.seller.username }}</td>
+                                <td>{{ agreement.buyer_name }}</td>
+                                <td>RWF {{ agreement.agreed_price }}</td>
+                                <td>{{ agreement.created_at|date:"M d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No agreements yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Transactions -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Recent Transactions</h5>
+                <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Trans. ID</th>
+                                <th>Seller</th>
+                                <th>Phone</th>
+                                <th>Amount</th>
+                                <th>Profit</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+                            <tr>
+                                <td><small>{{ transaction.transaction_id }}</small></td>
+                                <td>{{ transaction.seller.username }}</td>
+                                <td>{{ transaction.phone.brand }} {{ transaction.phone.model }}</td>
+                                <td>RWF {{ transaction.sale_price }}</td>
+                                <td class="text-success">RWF {{ transaction.profit }}</td>
+                                <td>{{ transaction.sale_date|date:"M d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No transactions yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column -->
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'manage_sellers' %}" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Manage Sellers
+                    </a>
+                    <a href="{% url 'pending_sellers' %}" class="btn btn-success">
+                        <i class="fas fa-user-check"></i> Pending Approvals
+                    </a>
+                    <a href="{% url 'phone_list' %}" class="btn btn-primary">
+                        <i class="fas fa-mobile-alt"></i> View Inventory
+                    </a>
+                    <a href="{% url 'agreement_list' %}" class="btn btn-success">
+                        <i class="fas fa-file-contract"></i> View Agreements
+                    </a>
+                    <a href="{% url 'sales_dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Sales Analytics
+                    </a>
+                    <a href="{% url 'report' %}" class="btn btn-success">
+                        <i class="fas fa-file-alt"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Sellers -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Sellers (This Month)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for seller in top_sellers %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">
+                                    {{ seller.seller__first_name }} {{ seller.seller__last_name }}
+                                </h6>
+                                <small class="text-muted">@{{ seller.seller__username }}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">RWF {{ seller.total_revenue|floatformat:0 }}</strong>
+                                <br>
+                                <small class="text-muted">{{ seller.total_sales }} sales</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted">
+                        No sales data yet
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

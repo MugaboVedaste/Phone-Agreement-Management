@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - PAM System{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 text-center mb-5">
+        <h1 class="display-4 mb-3">
+            <i class="fas fa-mobile-alt text-primary"></i> 
+            Phone Agreement Management System
+        </h1>
+        <p class="lead text-muted">
+            Secure, Digital, and Traceable Phone Agreements
+        </p>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+
+<!-- Profile Completion Warning -->
+{% if user.is_seller and not user.signature %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle"></i> <strong>Profile Incomplete!</strong> 
+    Please complete your profile including signature before creating agreements.
+    <a href="{% url 'profile' %}" class="alert-link">Complete Profile Now</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center py-4">
+                <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                <h3>Buy Phone</h3>
+                <p>Purchase a new phone and create buying agreement</p>
+                <a href="{% url 'buy_phone' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-plus"></i> Buy New Phone
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center py-4">
+                <i class="fas fa-hand-holding-usd fa-3x mb-3"></i>
+                <h3>Sell Phone</h3>
+                <p>Sell an available phone and create selling agreement</p>
+                <a href="{% url 'phone_list' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-mobile-alt"></i> View Available Phones
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Phones Card -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center hover-shadow">
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <i class="fas fa-mobile fa-4x text-primary"></i>
+                </div>
+                <h4 class="card-title">Phone Inventory</h4>
+                <p class="card-text text-muted">
+                    Manage your phone stock, track IMEI numbers, and monitor phone status
+                </p>
+                <a href="{% url 'phone_list' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> View Phones
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agreements Card -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center hover-shadow">
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <i class="fas fa-file-contract fa-4x text-success"></i>
+                </div>
+                <h4 class="card-title">Agreements</h4>
+                <p class="card-text text-muted">
+                    Create, view, and manage buy/sell agreements with digital signatures
+                </p>
+                <a href="{% url 'agreement_list' %}" class="btn btn-success">
+                    <i class="fas fa-arrow-right"></i> View Agreements
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sales Dashboard Card -->
+    <div class="col-md-4">
+        <div class="card h-100 text-center hover-shadow">
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <i class="fas fa-chart-line fa-4x text-primary"></i>
+                </div>
+                <h4 class="card-title">Sales Dashboard</h4>
+                <p class="card-text text-muted">
+                    Track performance, view analytics, and manage sales targets
+                </p>
+                <a href="{% url 'sales_dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> View Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Row -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h3 class="mb-4">Quick Statistics</h3>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-mobile-alt fa-2x mb-2"></i>
+                <h4>{{ stats.available_phones }}</h4>
+                <p class="mb-0">Available Phones</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file-signature fa-2x mb-2"></i>
+                <h4>{{ stats.total_agreements }}</h4>
+                <p class="mb-0">Total Agreements</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                <h4>{{ stats.monthly_sales }}</h4>
+                <p class="mb-0">Sales This Month</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                <h4>RWF {{ stats.monthly_revenue|floatformat:0 }}</h4>
+                <p class="mb-0">Monthly Revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Not Authenticated -->
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        <div class="card">
+            <div class="card-body p-5">
+                <h3 class="mb-4">Welcome to PAM System</h3>
+                <p class="lead mb-4">
+                    Please login or register to access the phone agreement management features
+                </p>
+                <div class="d-grid gap-3 d-md-block">
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-md-3">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hover-shadow {
+        transition: all 0.3s;
+    }
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Agreement Details - PAM System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <!-- Agreement Header -->
+            <div class="card mb-4">
+                <div class="card-header {% if agreement.agreement_type == 'buy' %}bg-primary{% else %}bg-success{% endif %} text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-contract"></i> 
+                        {{ agreement.get_agreement_type_display }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Agreement ID:</strong> #{{ agreement.id }}</p>
+                            <p><strong>Date:</strong> {{ agreement.created_at|date:"F d, Y - H:i" }}</p>
+                            <p><strong>Seller/Dealer:</strong> {{ agreement.seller.get_full_name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>{% if agreement.agreement_type == 'buy' %}Supplier{% else %}Customer{% endif %} Name:</strong> {{ agreement.customer_name }}</p>
+                            <p><strong>ID Number:</strong> {{ agreement.customer_national_id }}</p>
+                            <p><strong>Phone:</strong> {{ agreement.customer_phone }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phone Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-mobile-alt"></i> Phone Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Brand & Model:</th>
+                                    <td>{{ agreement.phone.brand }} {{ agreement.phone.model }}</td>
+                                </tr>
+                                <tr>
+                                    <th>IMEI:</th>
+                                    <td>{{ agreement.phone.imei }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Serial Number:</th>
+                                    <td>{{ agreement.phone.serial_number }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Color:</th>
+                                    <td>{{ agreement.phone.color }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Condition:</th>
+                                    <td><span class="badge bg-info">{{ agreement.phone.get_condition_display }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td><span class="badge bg-{% if agreement.phone.status == 'available' %}success{% elif agreement.phone.status == 'sold' %}danger{% else %}warning{% endif %}">{{ agreement.phone.get_status_display }}</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Transaction Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Price:</strong> <span class="text-success fs-4">RWF {{ agreement.price|floatformat:0 }}</span></p>
+                            {% if agreement.agreement_type == 'buy' %}
+                            <p><strong>Purchase Price:</strong> RWF {{ agreement.phone.purchase_price|floatformat:0 }}</p>
+                            {% else %}
+                            <p><strong>Purchase Price:</strong> RWF {{ agreement.phone.purchase_price|floatformat:0 }}</p>
+                            <p><strong>Profit:</strong> <span class="text-success">RWF {{ agreement.price|floatformat:0|add:0|add:agreement.phone.purchase_price|floatformat:0 }}</span></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if agreement.notes %}
+                            <p><strong>Notes:</strong></p>
+                            <p class="text-muted">{{ agreement.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-images"></i> Documents & Signatures</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Customer/Supplier ID Photo -->
+                        <div class="col-md-6 mb-3">
+                            <h6>{% if agreement.agreement_type == 'buy' %}Supplier{% else %}Customer{% endif %} ID Photo</h6>
+                            {% if agreement.id_photo %}
+                            <img src="{{ agreement.id_photo.url }}" alt="ID Photo" class="img-fluid border" style="max-height: 300px;">
+                            {% else %}
+                            <p class="text-muted">No ID photo captured</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Customer/Supplier Signature -->
+                        <div class="col-md-6 mb-3">
+                            <h6>{% if agreement.agreement_type == 'buy' %}Supplier{% else %}Customer{% endif %} Signature</h6>
+                            {% if agreement.signature_photo %}
+                            <img src="{{ agreement.signature_photo.url }}" alt="Signature" class="img-fluid border" style="max-height: 200px; background: white;">
+                            {% else %}
+                            <p class="text-muted">No signature captured</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Seller Signature -->
+                        <div class="col-md-6 mb-3">
+                            <h6>Seller/Dealer Signature</h6>
+                            {% if agreement.seller.signature %}
+                            <img src="{{ agreement.seller.signature.url }}" alt="Seller Signature" class="img-fluid border" style="max-height: 200px; background: white;">
+                            {% else %}
+                            <p class="text-muted">No seller signature on file</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer/Supplier Address -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Address Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>{% if agreement.agreement_type == 'buy' %}Supplier{% else %}Customer{% endif %} Address:</strong></p>
+                    <p>{{ agreement.customer_address }}</p>
+                    
+                    <p><strong>Seller/Dealer Address:</strong></p>
+                    <p>{{ agreement.seller.address|default:"Not provided" }}</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <div>
+                            <a href="{% url 'agreement_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Agreements
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{% url 'agreement_pdf' agreement.pk %}" class="btn btn-success" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Generate PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

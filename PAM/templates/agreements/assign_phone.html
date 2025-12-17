@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Phone - PAM System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-exchange-alt"></i> Assign Phone to Another Seller</h4>
+            </div>
+            <div class="card-body">
+                <!-- Phone Details -->
+                <div class="alert alert-info">
+                    <h5>Phone Information</h5>
+                    <p class="mb-1"><strong>Brand/Model:</strong> {{ phone.brand }} {{ phone.model }}</p>
+                    <p class="mb-1"><strong>IMEI:</strong> {{ phone.imei }}</p>
+                    <p class="mb-1"><strong>Serial:</strong> {{ phone.serial_number }}</p>
+                    <p class="mb-1"><strong>Color:</strong> {{ phone.color }}</p>
+                    <p class="mb-0"><strong>Condition:</strong> {{ phone.get_condition_display }}</p>
+                </div>
+
+                <!-- Assignment Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="to_seller" class="form-label">Assign To <span class="text-danger">*</span></label>
+                        <select name="to_seller" id="to_seller" class="form-select" required>
+                            <option value="">-- Select Seller --</option>
+                            {% for seller in sellers %}
+                            <option value="{{ seller.id }}">
+                                {{ seller.get_full_name }} ({{ seller.username }})
+                                {% if seller.phone_number %} - {{ seller.phone_number }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select the seller you want to transfer this phone to</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message (Optional)</label>
+                        <textarea name="message" id="message" class="form-control" rows="3" 
+                                  placeholder="Add a note for the recipient seller..."></textarea>
+                        <div class="form-text">Optional message to include with the assignment request</div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Note:</strong> Once you send this assignment request:
+                        <ul class="mb-0 mt-2">
+                            <li>The phone will be marked as "Assigned" and locked from sales</li>
+                            <li>The recipient seller will receive a notification</li>
+                            <li>They can approve or reject the assignment</li>
+                            <li>If approved, ownership will transfer to them</li>
+                            <li>If rejected, the phone will return to your inventory</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'phone_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Assignment Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

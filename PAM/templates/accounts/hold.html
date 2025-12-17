@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Suspended - PAM System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-7">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white text-center">
+                <h3><i class="fas fa-exclamation-triangle"></i> Account Suspended</h3>
+            </div>
+            <div class="card-body p-5 text-center">
+                <i class="fas fa-user-lock fa-5x text-danger mb-4"></i>
+                
+                <h4 class="mb-4">Your account is currently suspended</h4>
+                
+                {% if user.is_authenticated and user.suspended_reason %}
+                <div class="alert alert-warning">
+                    <strong>Reason:</strong> {{ user.suspended_reason }}
+                </div>
+                {% endif %}
+                
+                {% if user.is_authenticated and user.suspended_at %}
+                <p class="text-muted">
+                    <strong>Suspended on:</strong> {{ user.suspended_at|date:"F d, Y \a\t H:i" }}
+                </p>
+                {% endif %}
+                
+                <div class="mt-4 p-4 bg-light rounded">
+                    <h5 class="mb-3">What to do next?</h5>
+                    <ul class="list-unstyled text-start">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Contact your manager or system administrator
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Provide your username: <strong>{{ user.username }}</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Wait for account activation
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'logout' %}" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+                
+                <div class="mt-4 text-muted small">
+                    <p>If you believe this is an error, please contact support immediately.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

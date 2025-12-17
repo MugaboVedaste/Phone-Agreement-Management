@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Phone Assignments - PAM System{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-exchange-alt"></i> Phone Assignments</h2>
+    <p class="text-muted">Manage phone transfers between sellers</p>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#received" type="button">
+            <i class="fas fa-inbox"></i> Received Assignments 
+            <span class="badge bg-primary">
+                {{ received_assignments|length }}
+            </span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sent" type="button">
+            <i class="fas fa-paper-plane"></i> Sent Assignments
+            <span class="badge bg-secondary">
+                {{ sent_assignments|length }}
+            </span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content">
+    <!-- Received Assignments Tab -->
+    <div class="tab-pane fade show active" id="received">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assignments Waiting for Your Response</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Phone</th>
+                            <th>From Seller</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in received_assignments %}
+                        <tr>
+                            <td>
+                                <strong>{{ assignment.phone.brand }} {{ assignment.phone.model }}</strong><br>
+                                <small class="text-muted">IMEI: {{ assignment.phone.imei }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ assignment.from_seller.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ assignment.from_seller.username }}</small>
+                            </td>
+                            <td>
+                                {% if assignment.message %}
+                                    <small>{{ assignment.message|truncatewords:10 }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ assignment.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if assignment.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif assignment.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif assignment.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if assignment.status == 'pending' %}
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'approve_assignment' assignment.id %}" 
+                                       class="btn btn-success"
+                                       onclick="return confirm('Accept this phone into your inventory?')">
+                                        <i class="fas fa-check"></i> Approve
+                                    </a>
+                                    <a href="{% url 'reject_assignment' assignment.id %}" 
+                                       class="btn btn-danger"
+                                       onclick="return confirm('Reject this assignment and return phone to sender?')">
+                                        <i class="fas fa-times"></i> Reject
+                                    </a>
+                                </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No assignments received</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sent Assignments Tab -->
+    <div class="tab-pane fade" id="sent">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assignments You've Sent</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Phone</th>
+                            <th>To Seller</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in sent_assignments %}
+                        <tr>
+                            <td>
+                                <strong>{{ assignment.phone.brand }} {{ assignment.phone.model }}</strong><br>
+                                <small class="text-muted">IMEI: {{ assignment.phone.imei }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ assignment.to_seller.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ assignment.to_seller.username }}</small>
+                            </td>
+                            <td>
+                                {% if assignment.message %}
+                                    <small>{{ assignment.message|truncatewords:10 }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ assignment.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if assignment.status == 'pending' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clock"></i> Awaiting Response
+                                    </span>
+                                {% elif assignment.status == 'approved' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> Approved
+                                    </span>
+                                {% elif assignment.status == 'rejected' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle"></i> Rejected
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No assignments sent yet</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

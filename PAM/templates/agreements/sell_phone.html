@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Sell Phone - PAM System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <!-- Phone Details Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-mobile-alt"></i> Phone Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Brand:</strong><br>
+                            {{ phone.brand }} {{ phone.model }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>IMEI:</strong><br>
+                            {{ phone.imei }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Color:</strong><br>
+                            {{ phone.color }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Purchase Price:</strong><br>
+                            RWF {{ phone.purchase_price|floatformat:0 }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selling Agreement Form -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Sell Phone & Create Agreement</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This form will create a selling agreement for the above phone.
+                    </div>
+
+                    <form method="post" id="sellPhoneForm">
+                        {% csrf_token %}
+                        
+                        <!-- Buyer Information -->
+                        <h5 class="text-success mt-4 mb-3"><i class="fas fa-user"></i> Buyer Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="buyer_name" class="form-label">Buyer Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="buyer_name" name="buyer_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="buyer_id" class="form-label">Buyer ID Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="buyer_id" name="buyer_id" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="buyer_phone" class="form-label">Buyer Phone <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="buyer_phone" name="buyer_phone" required placeholder="07XXXXXXXX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="buyer_address" class="form-label">Buyer Address <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="buyer_address" name="buyer_address" required>
+                            </div>
+                        </div>
+
+                        <!-- Payment Information -->
+                        <h5 class="text-success mt-4 mb-3"><i class="fas fa-money-bill-wave"></i> Payment Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="agreed_price" class="form-label">Selling Price (RWF) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="agreed_price" name="agreed_price" required min="0" step="0.01"
+                                       placeholder="Suggested: {{ phone.purchase_price }}">
+                                <small class="text-muted">Purchase price was: RWF {{ phone.purchase_price|floatformat:0 }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                                <select class="form-select" id="payment_method" name="payment_method" required>
+                                    <option value="">Select payment method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="installment">Installment</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about the sale..."></textarea>
+                        </div>
+
+                        <!-- Buyer ID Photo -->
+                        <h5 class="text-success mt-4 mb-3"><i class="fas fa-id-card"></i> Buyer ID Photo</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <video id="webcam_id" width="100%" height="300" autoplay style="border: 2px solid #e2e8f0; background: #000;"></video>
+                                <button type="button" class="btn btn-success mt-2 w-100" onclick="captureIDPhoto()">
+                                    <i class="fas fa-camera"></i> Capture Buyer ID Photo
+                                </button>
+                                <input type="hidden" name="buyer_id_photo" id="buyer_id_photo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <canvas id="id_preview" width="400" height="300" style="border: 2px solid #e2e8f0; width: 100%;"></canvas>
+                                <p class="text-muted mt-2"><small>Buyer's ID photo will appear here</small></p>
+                            </div>
+                        </div>
+
+                        <!-- Buyer Signature Photo -->
+                        <h5 class="text-success mt-4 mb-3"><i class="fas fa-signature"></i> Buyer Signature Photo</h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Ask the buyer to sign on paper, then take a photo of the signature.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <video id="webcam_signature" width="100%" height="300" autoplay style="border: 2px solid #e2e8f0; background: #000;"></video>
+                                <button type="button" class="btn btn-success mt-2 w-100" onclick="captureSignaturePhoto()">
+                                    <i class="fas fa-camera"></i> Capture Signature Photo
+                                </button>
+                                <input type="hidden" name="buyer_signature_photo" id="buyer_signature_photo">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <canvas id="signature_preview" width="400" height="300" style="border: 2px solid #e2e8f0; width: 100%;"></canvas>
+                                <p class="text-muted mt-2"><small>Signature photo will appear here</small></p>
+                            </div>
+                        </div>
+
+                        <!-- Seller Signature (from profile) -->
+                        <h5 class="text-success mt-4 mb-3"><i class="fas fa-user-check"></i> Your Signature (Seller)</h5>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Your signature will be automatically added from your profile.
+                            {% if user.signature %}
+                            <div class="mt-2">
+                                <img src="{{ user.signature.url }}" alt="Your Signature" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'phone_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Complete Sale
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize webcams
+let videoID = document.getElementById('webcam_id');
+let videoSignature = document.getElementById('webcam_signature');
+let canvasID = document.getElementById('id_preview');
+let canvasSignature = document.getElementById('signature_preview');
+let ctxID = canvasID.getContext('2d');
+let ctxSignature = canvasSignature.getContext('2d');
+
+let stream = null;
+
+// Start webcam
+async function startWebcam() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoID.srcObject = stream;
+        videoSignature.srcObject = stream;
+    } catch (err) {
+        console.error("Error accessing webcam:", err);
+        alert("Could not access webcam. Please check permissions.");
+    }
+}
+
+// Capture ID photo
+function captureIDPhoto() {
+    ctxID.drawImage(videoID, 0, 0, canvasID.width, canvasID.height);
+    document.getElementById('buyer_id_photo').value = canvasID.toDataURL('image/jpeg');
+}
+
+// Capture signature photo
+function captureSignaturePhoto() {
+    ctxSignature.drawImage(videoSignature, 0, 0, canvasSignature.width, canvasSignature.height);
+    document.getElementById('buyer_signature_photo').value = canvasSignature.toDataURL('image/jpeg');
+}
+
+// Start webcam on page load
+startWebcam();
+</script>
+{% endblock %}
